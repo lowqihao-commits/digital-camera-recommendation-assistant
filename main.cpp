@@ -1,6 +1,8 @@
 #include <iostream>
+#include <algorithm>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 struct CameraCategory {
@@ -11,6 +13,7 @@ struct CameraCategory {
     int videoCapability;
     int affordability;
     std::vector<std::string> exampleModels;
+    int score = 0;
 };
 
 struct UserPreferences {
@@ -36,6 +39,55 @@ std::vector<CameraCategory> createCameraCategories() {
         {"Professional Full-Frame Mirrorless Camera", 5, 2, 5, 5, 1,
          {"Sony a1 II", "Canon EOS R5 Mark II"}}
     };
+}
+
+int getPurposeBonus(int purpose, std::size_t categoryIndex) {
+    static const int bonuses[5][5] = {
+        {15, 10, 3, 0, 0},
+        {12, 15, 8, 2, 1},
+        {2, 8, 15, 5, 10},
+        {0, 3, 8, 18, 12},
+        {0, 2, 10, 12, 20}
+    };
+    return bonuses[purpose - 1][categoryIndex];
+}
+
+int getExperienceBonus(int experience, std::size_t categoryIndex) {
+    static const int bonuses[3][5] = {
+        {8, 12, 3, 0, 0},
+        {2, 5, 12, 6, 3},
+        {0, 2, 7, 10, 12}
+    };
+    return bonuses[experience - 1][categoryIndex];
+}
+
+int calculateScore(const UserPreferences& preferences,
+                   const CameraCategory& category,
+                   std::size_t categoryIndex) {
+    const int preferenceScore =
+        preferences.imageQualityPriority * category.imageQuality
+        + preferences.portabilityPriority * category.portability
+        + preferences.autofocusSpeedPriority * category.autofocusSpeed
+        + preferences.videoPriority * category.videoCapability
+        + preferences.budgetSensitivity * category.affordability;
+    return preferenceScore
+        + getPurposeBonus(preferences.photographyPurpose, categoryIndex)
+        + getExperienceBonus(preferences.experienceLevel, categoryIndex);
+}
+
+void calculateCategoryScores(std::vector<CameraCategory>& categories,
+                             const UserPreferences& preferences) {
+    for (std::size_t index = 0; index < categories.size(); ++index) {
+        categories[index].score = calculateScore(preferences, categories[index], index);
+    }
+}
+
+std::vector<CameraCategory> rankRecommendations(std::vector<CameraCategory> categories) {
+    std::sort(categories.begin(), categories.end(),
+              [](const CameraCategory& left, const CameraCategory& right) {
+                  return left.score > right.score;
+              });
+    return categories;
 }
 
 int getValidatedInteger(const std::string& prompt, int minValue, int maxValue) {
@@ -103,7 +155,7 @@ void collectPriorityRatings(UserPreferences& preferences) {
 
 int main() {
     displayWelcome();
-    const std::vector<CameraCategory> cameraCategories = createCameraCategories();
+    std::vector<CameraCategory> cameraCategories = createCameraCategories();
     UserPreferences preferences;
     preferences.photographyPurpose = getPhotographyPurpose();
     if (preferences.photographyPurpose == 0) return 0;
@@ -112,7 +164,10 @@ int main() {
     collectPriorityRatings(preferences);
     if (std::cin.eof()) return 0;
 
-    std::cout << "\nPreferences recorded. Camera categories available: "
-              << cameraCategories.size() << ".\n";
+    calculateCategoryScores(cameraCategories, preferences);
+    const std::vector<CameraCategory> rankedCategories =
+        rankRecommendations(cameraCategories);
+    std::cout << "\nCurrent top match: " << rankedCategories.front().name
+              << " (score " << rankedCategories.front().score << ").\n";
     return 0;
 }
