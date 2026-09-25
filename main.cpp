@@ -2,6 +2,16 @@
 #include <sstream>
 #include <string>
 
+struct UserPreferences {
+    int photographyPurpose = 0;
+    int experienceLevel = 0;
+    int imageQualityPriority = 0;
+    int portabilityPriority = 0;
+    int autofocusSpeedPriority = 0;
+    int videoPriority = 0;
+    int budgetSensitivity = 0;
+};
+
 int getValidatedInteger(const std::string& prompt, int minValue, int maxValue) {
     std::string inputLine;
     while (true) {
@@ -42,10 +52,39 @@ int getPhotographyPurpose() {
     return getValidatedInteger("Purpose [1-5]: ", 1, 5);
 }
 
+int getExperienceLevel() {
+    std::cout << "\nSelect your photography experience:\n"
+              << "1. Beginner\n"
+              << "2. Intermediate\n"
+              << "3. Advanced\n";
+    return getValidatedInteger("Experience [1-3]: ", 1, 3);
+}
+
+int getPriorityRating(const std::string& factor) {
+    return getValidatedInteger(factor + " priority [1-5]: ", 1, 5);
+}
+
+void collectPriorityRatings(UserPreferences& preferences) {
+    std::cout << "\nRate each factor from 1 (Not Important) to 5 (Very Important).\n";
+    preferences.imageQualityPriority = getPriorityRating("Image quality");
+    preferences.portabilityPriority = getPriorityRating("Portability");
+    preferences.autofocusSpeedPriority = getPriorityRating("Autofocus / speed");
+    preferences.videoPriority = getPriorityRating("Video capability");
+    std::cout << "For budget, 1 means price is not a major concern;\n"
+              << "5 means keeping cost low is very important.\n";
+    preferences.budgetSensitivity = getPriorityRating("Budget sensitivity");
+}
+
 int main() {
     displayWelcome();
-    int photographyPurpose = getPhotographyPurpose();
-    if (photographyPurpose == 0) return 0;
-    std::cout << "Purpose selected: " << photographyPurpose << "\n";
+    UserPreferences preferences;
+    preferences.photographyPurpose = getPhotographyPurpose();
+    if (preferences.photographyPurpose == 0) return 0;
+    preferences.experienceLevel = getExperienceLevel();
+    if (preferences.experienceLevel == 0) return 0;
+    collectPriorityRatings(preferences);
+    if (std::cin.eof()) return 0;
+
+    std::cout << "\nPreferences recorded.\n";
     return 0;
 }
