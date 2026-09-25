@@ -1,6 +1,17 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
+
+struct CameraCategory {
+    std::string name;
+    int imageQuality;
+    int portability;
+    int autofocusSpeed;
+    int videoCapability;
+    int affordability;
+    std::vector<std::string> exampleModels;
+};
 
 struct UserPreferences {
     int photographyPurpose = 0;
@@ -11,6 +22,21 @@ struct UserPreferences {
     int videoPriority = 0;
     int budgetSensitivity = 0;
 };
+
+std::vector<CameraCategory> createCameraCategories() {
+    return {
+        {"Compact Digital Camera", 3, 5, 2, 3, 5,
+         {"Canon PowerShot G7 X Mark III", "Sony ZV-1 II"}},
+        {"Entry-Level Mirrorless Camera", 4, 4, 3, 4, 4,
+         {"Canon EOS R50", "Sony a6400"}},
+        {"Enthusiast Mirrorless Camera", 5, 3, 4, 5, 3,
+         {"Fujifilm X-T5", "Sony a6700"}},
+        {"High-Speed Mirrorless Camera", 5, 2, 5, 4, 2,
+         {"Sony a9 III", "Canon EOS R6 Mark II"}},
+        {"Professional Full-Frame Mirrorless Camera", 5, 2, 5, 5, 1,
+         {"Sony a1 II", "Canon EOS R5 Mark II"}}
+    };
+}
 
 int getValidatedInteger(const std::string& prompt, int minValue, int maxValue) {
     std::string inputLine;
@@ -77,6 +103,7 @@ void collectPriorityRatings(UserPreferences& preferences) {
 
 int main() {
     displayWelcome();
+    const std::vector<CameraCategory> cameraCategories = createCameraCategories();
     UserPreferences preferences;
     preferences.photographyPurpose = getPhotographyPurpose();
     if (preferences.photographyPurpose == 0) return 0;
@@ -85,6 +112,7 @@ int main() {
     collectPriorityRatings(preferences);
     if (std::cin.eof()) return 0;
 
-    std::cout << "\nPreferences recorded.\n";
+    std::cout << "\nPreferences recorded. Camera categories available: "
+              << cameraCategories.size() << ".\n";
     return 0;
 }
