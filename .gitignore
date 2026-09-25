@@ -1,0 +1,13 @@
+# Local build and test artifacts
+*.exe
+*.o
+*.obj
+/cameraRecommender
+/scoring_test
+/work/
+__pycache__/
+.vscode/
+.idea/
+
+# Generated log export; the live commit history is available on GitHub.
+/gitLog.txt
