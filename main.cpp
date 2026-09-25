@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <sstream>
 #include <string>
-#include <utility>
 #include <vector>
 
 struct CameraCategory {
@@ -29,15 +28,15 @@ struct UserPreferences {
 std::vector<CameraCategory> createCameraCategories() {
     return {
         {"Compact Digital Camera", 3, 5, 2, 3, 5,
-         {"Canon PowerShot G7 X Mark III", "Sony ZV-1 II"}},
+         {"Canon PowerShot G7 X Mark III", "Sony RX100 VII"}},
         {"Entry-Level Mirrorless Camera", 4, 4, 3, 4, 4,
-         {"Canon EOS R50", "Sony a6400"}},
+         {"Canon EOS R50", "Nikon Z50II", "Sony a6400"}},
         {"Enthusiast Mirrorless Camera", 5, 3, 4, 5, 3,
-         {"Fujifilm X-T5", "Sony a6700"}},
+         {"Canon EOS R7", "Nikon Z6III", "Sony a6700"}},
         {"High-Speed Mirrorless Camera", 5, 2, 5, 4, 2,
-         {"Sony a9 III", "Canon EOS R6 Mark II"}},
+         {"Canon EOS R5 Mark II", "Nikon Z8", "Sony a9 III"}},
         {"Professional Full-Frame Mirrorless Camera", 5, 2, 5, 5, 1,
-         {"Sony a1 II", "Canon EOS R5 Mark II"}}
+         {"Canon EOS R1", "Nikon Z9", "Sony a1 II"}}
     };
 }
 
@@ -90,6 +89,64 @@ std::vector<CameraCategory> rankRecommendations(std::vector<CameraCategory> cate
     return categories;
 }
 
+std::string getPhotographyPurposeName(int purpose) {
+    static const std::string names[] = {
+        "Family / Casual Photography", "Travel Photography",
+        "Portrait Photography", "Sports / Wildlife Photography",
+        "Professional / Commercial Photography"
+    };
+    return names[purpose - 1];
+}
+
+void displayExplanation(const UserPreferences& preferences,
+                        const CameraCategory& recommendation) {
+    std::cout << "\nWhy this may suit you:\n"
+              << "You selected " << getPhotographyPurposeName(preferences.photographyPurpose)
+              << ". The category's capabilities and your ratings contributed to its score.\n";
+
+    if (preferences.imageQualityPriority >= 4) {
+        std::cout << "- You gave image quality a high priority.\n";
+    }
+    if (preferences.portabilityPriority >= 4) {
+        std::cout << "- You prefer a more portable camera.\n";
+    }
+    if (preferences.autofocusSpeedPriority >= 4) {
+        std::cout << "- Fast autofocus and shooting speed matter to you.\n";
+    }
+    if (preferences.videoPriority >= 4) {
+        std::cout << "- You value video capability.\n";
+    }
+    if (preferences.budgetSensitivity >= 4) {
+        std::cout << "- Keeping cost low is important to you.\n";
+    }
+    std::cout << "The profile for " << recommendation.name
+              << " performed best against those inputs and the selected purpose and experience bonuses.\n";
+}
+
+void displayRecommendation(const std::vector<CameraCategory>& rankedCategories,
+                           const UserPreferences& preferences) {
+    if (rankedCategories.size() < 3) return;
+
+    const CameraCategory& best = rankedCategories[0];
+    std::cout << "\n============================================================\n"
+              << "                 YOUR CAMERA RECOMMENDATION\n"
+              << "============================================================\n"
+              << "Best match: " << best.name << "\n"
+              << "Suitability score: " << best.score << "\n"
+              << "Best for: " << getPhotographyPurposeName(preferences.photographyPurpose)
+              << "\n\nExample models in this category (examples only):\n";
+    for (const std::string& model : best.exampleModels) {
+        std::cout << "- " << model << "\n";
+    }
+    displayExplanation(preferences, best);
+
+    std::cout << "\nAlternative options:\n";
+    for (std::size_t index = 1; index < 3; ++index) {
+        std::cout << index + 1 << ". " << rankedCategories[index].name
+                  << " (score " << rankedCategories[index].score << ")\n";
+    }
+}
+
 int getValidatedInteger(const std::string& prompt, int minValue, int maxValue) {
     std::string inputLine;
     while (true) {
@@ -138,6 +195,13 @@ int getExperienceLevel() {
     return getValidatedInteger("Experience [1-3]: ", 1, 3);
 }
 
+int getRestartChoice() {
+    std::cout << "\nWhat would you like to do?\n"
+              << "1. Start another recommendation\n"
+              << "2. Exit\n";
+    return getValidatedInteger("Choice [1-2]: ", 1, 2);
+}
+
 int getPriorityRating(const std::string& factor) {
     return getValidatedInteger(factor + " priority [1-5]: ", 1, 5);
 }
@@ -156,18 +220,26 @@ void collectPriorityRatings(UserPreferences& preferences) {
 int main() {
     displayWelcome();
     std::vector<CameraCategory> cameraCategories = createCameraCategories();
-    UserPreferences preferences;
-    preferences.photographyPurpose = getPhotographyPurpose();
-    if (preferences.photographyPurpose == 0) return 0;
-    preferences.experienceLevel = getExperienceLevel();
-    if (preferences.experienceLevel == 0) return 0;
-    collectPriorityRatings(preferences);
-    if (std::cin.eof()) return 0;
+    while (true) {
+        UserPreferences preferences;
+        preferences.photographyPurpose = getPhotographyPurpose();
+        if (preferences.photographyPurpose == 0) return 0;
+        preferences.experienceLevel = getExperienceLevel();
+        if (preferences.experienceLevel == 0) return 0;
+        collectPriorityRatings(preferences);
+        if (std::cin.eof()) return 0;
 
-    calculateCategoryScores(cameraCategories, preferences);
-    const std::vector<CameraCategory> rankedCategories =
-        rankRecommendations(cameraCategories);
-    std::cout << "\nCurrent top match: " << rankedCategories.front().name
-              << " (score " << rankedCategories.front().score << ").\n";
-    return 0;
+        calculateCategoryScores(cameraCategories, preferences);
+        const std::vector<CameraCategory> rankedCategories =
+            rankRecommendations(cameraCategories);
+        displayRecommendation(rankedCategories, preferences);
+
+        const int restartChoice = getRestartChoice();
+        if (restartChoice == 0) return 0;
+        if (restartChoice == 2) {
+            std::cout << "\nThanks for using the Digital Camera Recommendation Assistant. Goodbye!\n";
+            return 0;
+        }
+        cameraCategories = createCameraCategories();
+    }
 }
