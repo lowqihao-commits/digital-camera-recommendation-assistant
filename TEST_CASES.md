@@ -1,6 +1,6 @@
 # Verified Test Cases
 
-The test suite compiles the actual `main.cpp` with GCC 15.2.0 in C++17 mode, using `-Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -D_GLIBCXX_ASSERTIONS`. Both the program and scoring harness compiled without warnings. The application remains standard C++17; Python is used only for optional test automation.
+The checks compile the actual `main.cpp` and C++ scoring harness with GCC 15.2.0 in C++17 mode, using `-Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -D_GLIBCXX_ASSERTIONS`. Both C++ programs compiled without warnings.
 
 ## Recommendation Scenarios
 
@@ -47,23 +47,17 @@ These tests establish consistency with the educational scoring model; they do no
 
 A real interactive Windows terminal run also verifies menu spacing, echoed answers, the four-answer summary, sports results, and exit.
 
-## Reproduce
+## Reproduce the C++ scoring check
 
-From the project directory, with GCC and Python 3 available:
-
-```bash
-python tests/test_program.py
-```
-
-To retain test binaries, transcripts and a JSON result file locally:
+From the project directory:
 
 ```bash
-python tests/test_program.py --build-dir work/test-results
+g++ -std=c++17 -Wall -Wextra -Wpedantic tests/scoring_test.cpp -o scoring_test
+./scoring_test
 ```
 
 Expected summary:
 
 ```text
 PASS: 46875 scoring/ranking combinations; 3494 joint-top combinations; budget direction checked.
-PASS: 376 console sessions; 72-column layout; invalid input, EOF and restart.
 ```

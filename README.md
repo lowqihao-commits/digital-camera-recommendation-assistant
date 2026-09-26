@@ -63,12 +63,6 @@ The scores are comparison points for this program, not percentages or official c
 
 ## ✅ Testing
 
-Detailed test cases and reproducible checks are available in [TEST_CASES.md](TEST_CASES.md).
+Detailed test cases and reproducible C++ checks are available in [TEST_CASES.md](TEST_CASES.md).
 
-The project also includes optional automated checks:
-
-```bash
-python tests/test_program.py
-```
-
-No external libraries or online services are required by the C++ program.
+No external libraries or online services are required.
