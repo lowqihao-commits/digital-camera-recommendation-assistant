@@ -23,7 +23,7 @@ The project connects with Part 1 by applying digital-photography development to 
 ### Compile
 
 ```bash
-g++ -std=c++17 -Wall -Wextra -Wpedantic main.cpp -o cameraRecommender
+g++ main.cpp -o cameraRecommender
 ```
 
 ### Start the program
