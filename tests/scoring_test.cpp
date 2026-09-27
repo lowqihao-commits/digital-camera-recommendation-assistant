@@ -59,33 +59,40 @@ int main() {
                             require(scores[category] == expected, "Incorrect score");
                         }
 
-                        bool shown[5] = {false};
-                        int previous = -1;
-                        for (int place = 0; place < 3; ++place) {
-                            int category = findNextBest(scores, shown);
-                            require(category >= 0 && !shown[category],
-                                    "Duplicate or missing top-three category");
-                            if (previous >= 0) {
-                                require(scores[previous] >= scores[category],
-                                        "Top three out of order");
-                                if (scores[previous] == scores[category]) {
-                                    require(previous < category,
-                                            "Tie order changed");
-                                }
+                        // The earliest category wins when several share the top score.
+                        int expectedBest = 0;
+                        for (int category = 1; category < 5; ++category) {
+                            if (scores[category] > scores[expectedBest]) {
+                                expectedBest = category;
                             }
-                            if (place == 1 && scores[previous] == scores[category]) {
-                                ++ties;
-                            }
-                            shown[category] = true;
-                            previous = category;
                         }
+                        require(findBestCategory(scores) == expectedBest,
+                                "Incorrect best-match category");
+                        for (int category = expectedBest + 1; category < 5;
+                             ++category) {
+                            if (scores[category] == scores[expectedBest]) {
+                                ++ties;
+                                break;
+                            }
+                        }
+
+                        // Run the complete console flow as well as the score
+                        // calculation, then check the category actually shown.
+                        std::ostringstream answers;
+                        answers << purpose << '\n' << experience << '\n'
+                                << priority << '\n' << budget << "\n2\n";
+                        const std::string result = runProgram(answers.str());
+                        const std::string expectedLabel =
+                            "  BEST MATCH\n  " + CAMERA_NAMES[expectedBest] + '\n';
+                        require(result.find(expectedLabel) != std::string::npos,
+                                "Console displayed the wrong best match");
                         ++questionnaires;
                     }
                 }
             }
         }
 
-        // One run checks invalid answers, the three-result layout and restart.
+        // One run checks invalid answers, two separate results, and restart.
         const std::string transcript = runProgram(
             "abc\n2\n1\n2\n3\n1\n4\n3\n3\n1\n2\n");
         require(transcript.find("Invalid input.") != std::string::npos,
@@ -94,8 +101,14 @@ int main() {
                 "Travel result missing");
         require(transcript.find("High-Speed Mirrorless Camera") != std::string::npos,
                 "Sports result missing");
-        require(transcript.find("OTHER CATEGORIES") == std::string::npos,
-                "Extra category section is still shown");
+        require(transcript.find("OTHER GOOD MATCHES") == std::string::npos,
+                "Extra recommendation section is still shown");
+        require(transcript.find("Scores compare") == std::string::npos
+                    && transcript.find(" points") == std::string::npos,
+                "Internal score explanation is still shown");
+        require(transcript.find("Canon EOS R50") != std::string::npos
+                    && transcript.find("Nikon Z8") != std::string::npos,
+                "Example models are missing from the two results");
         require(transcript.find("Thank you. Goodbye!") != std::string::npos,
                 "Exit message missing");
 
@@ -104,8 +117,35 @@ int main() {
         require(noFinalNewline.find("High-Speed Mirrorless Camera") != std::string::npos,
                 "Final answer without newline was lost");
 
+        // This answer set ties; the first category must remain the sole result.
+        const std::string tiedResult = runProgram("1\n1\n4\n5\n2\n");
+        require(tiedResult.find("Compact Digital Camera") != std::string::npos
+                    && tiedResult.find("Entry-Level Mirrorless Camera")
+                        == std::string::npos,
+                "Tied result displayed more than one category");
+
+        // Reject out-of-range, decimal and blank answers before continuing.
+        const std::string invalidAnswers = runProgram(
+            "0\n6\n2.5\n \n1\n1\n4\n5\n2\n");
+        int invalidCount = 0;
+        std::size_t position = 0;
+        while ((position = invalidAnswers.find("Invalid input.", position))
+               != std::string::npos) {
+            ++invalidCount;
+            ++position;
+        }
+        require(invalidCount == 4
+                    && invalidAnswers.find("Compact Digital Camera")
+                        != std::string::npos,
+                "Invalid answers were not rejected and recovered from");
+
+        const std::string emptyInput = runProgram("");
+        require(emptyInput.find("Input closed. Goodbye!") != std::string::npos
+                    && emptyInput.find("BEST MATCH") == std::string::npos,
+                "Empty input did not exit cleanly");
+
         std::cout << "PASS: " << questionnaires
-                  << " questionnaires, scores and top-three ranking checked.\n"
+                  << " questionnaires, scores and best matches checked.\n"
                   << "PASS: " << ties << " cases have a tie for best match.\n"
                   << "PASS: invalid input, restart, exit and end-of-input checked.\n";
     } catch (const std::exception& error) {

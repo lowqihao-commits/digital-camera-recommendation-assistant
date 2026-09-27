@@ -1,10 +1,10 @@
 # Test Cases
 
-The program asks for photography purpose, experience level, main priority, and budget sensitivity. It shows one best match and two alternatives.
+The program asks for photography purpose, experience level, main priority, and budget sensitivity. It shows one best match with a short explanation and two example models.
 
 ## Representative scenarios
 
-| Purpose and experience | Main priority | Budget | Expected best match | Score |
+| Purpose and experience | Main priority | Budget | Expected best match | Internal score |
 | --- | --- | ---: | --- | ---: |
 | Family, beginner | Portability | 5 | Compact Digital Camera | 81 |
 | Travel, beginner | Portability | 3 | Entry-Level Mirrorless Camera | 70 |
@@ -17,9 +17,9 @@ These results use simple category ratings and bonuses. They are comparisons with
 
 ## Automated C++ checks
 
-`tests/scoring_test.cpp` checks all **300** valid answer combinations (5 purposes x 3 experience levels x 4 priorities x 5 budget values). It compares each score with the assignment's rating and bonus tables, checks the top three are in score order, and confirms ties keep a consistent order. **28** combinations produce a tie for best match.
+`tests/scoring_test.cpp` checks all **300** valid answer combinations (5 purposes x 3 experience levels x 4 priorities x 5 budget values). It compares each score with the rating and bonus tables, runs each complete questionnaire, checks the category displayed, and confirms ties keep a consistent order. **28** combinations produce a tie for best match.
 
-The same test also checks invalid input, two questionnaires in one run, exit, and end-of-input after the last answer. The C++ program and test compiled with GCC 15.2.0 in C++17 mode and warning flags enabled.
+The same test also checks invalid inputs (letters, out-of-range numbers, decimals, and blanks), two questionnaires in one run, the simplified result, exit, and end-of-input. The C++ program and test compiled with GCC 15.2.0 in C++17 mode and warning flags enabled.
 
 To run the C++ checks from the project folder:
 

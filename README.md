@@ -2,7 +2,7 @@
 
 A simple C++17 console program that helps users choose a digital-camera category based on their needs.
 
-You answer four questions and receive a best match, two alternatives, and example models for the best match.
+Answer four questions to get a best-match camera category and two example models.
 
 ---
 
@@ -12,7 +12,7 @@ You answer four questions and receive a best match, two alternatives, and exampl
 - Considers experience level
 - Uses a main priority: image quality, portability, autofocus/speed, or video
 - Considers budget sensitivity
-- Displays a best match, two alternatives, scores, and a short explanation
+- Displays one best match, a short explanation, and example models
 
 The project connects with Part 1 by applying digital-photography development to a practical camera-selection task.
 
@@ -57,7 +57,7 @@ Invalid answers are rejected and the program asks again.
 
 The program compares five camera categories using simple capability scores. The selected main priority receives extra weight, while purpose and experience add category bonuses. A higher budget-sensitivity value gives more weight to affordability.
 
-The scores are comparison points for this program, not percentages or official camera ratings.
+The scores are used internally to choose the best match; they are not product ratings.
 
 ---
 
