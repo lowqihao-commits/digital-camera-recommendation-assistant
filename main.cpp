@@ -1,357 +1,266 @@
-#include <algorithm>
-#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <vector>
 
-struct CameraCategory {
-    std::string name;
-    int imageQuality;
-    int portability;
-    int autofocusSpeed;
-    int videoCapability;
-    int affordability;
-    std::vector<std::string> exampleModels;
-    int score = 0;
+const int CATEGORY_COUNT = 5;
+const int FEATURE_COUNT = 5;
+
+// Keep the same category order in every table below.
+const std::string CAMERA_NAMES[CATEGORY_COUNT] = {
+    "Compact Digital Camera",
+    "Entry-Level Mirrorless Camera",
+    "Enthusiast Mirrorless Camera",
+    "High-Speed Mirrorless Camera",
+    "Professional Full-Frame Mirrorless Camera"
 };
 
-struct UserPreferences {
-    int photographyPurpose = 0;
-    int experienceLevel = 0;
-    int imageQualityPriority = 1;
-    int portabilityPriority = 1;
-    int autofocusSpeedPriority = 1;
-    int videoPriority = 1;
-    int budgetSensitivity = 0;
-    int mainPriority = 0;
+// Ratings: image quality, portability, autofocus/speed, video, affordability.
+const int CAMERA_RATINGS[CATEGORY_COUNT][FEATURE_COUNT] = {
+    {3, 5, 2, 3, 5},
+    {4, 4, 3, 4, 4},
+    {5, 3, 4, 5, 3},
+    {5, 2, 5, 4, 2},
+    {5, 2, 5, 5, 1}
 };
 
-void applyMainPriority(UserPreferences& preferences, int mainPriority) {
-    // The chosen feature gets weight 5; other features retain baseline weight 1.
-    preferences.imageQualityPriority = 1;
-    preferences.portabilityPriority = 1;
-    preferences.autofocusSpeedPriority = 1;
-    preferences.videoPriority = 1;
-    preferences.mainPriority = mainPriority;
-    switch (mainPriority) {
-        case 1: preferences.imageQualityPriority = 5; break;
-        case 2: preferences.portabilityPriority = 5; break;
-        case 3: preferences.autofocusSpeedPriority = 5; break;
-        case 4: preferences.videoPriority = 5; break;
-    }
+// Each row follows the photography-purpose menu (1 to 5).
+const int PURPOSE_BONUSES[5][CATEGORY_COUNT] = {
+    {15, 10, 3, 0, 0},
+    {12, 15, 8, 2, 1},
+    {2, 8, 15, 5, 10},
+    {0, 3, 8, 18, 12},
+    {0, 2, 10, 12, 20}
+};
+
+// Rows are beginner, intermediate and advanced.
+const int EXPERIENCE_BONUSES[3][CATEGORY_COUNT] = {
+    {8, 12, 3, 0, 0},
+    {2, 5, 12, 6, 3},
+    {0, 2, 7, 10, 12}
+};
+
+const std::string EXAMPLE_MODELS[CATEGORY_COUNT][2] = {
+    {"Canon PowerShot G7 X Mark III", "Sony RX100 VII"},
+    {"Canon EOS R50", "Nikon Z50II"},
+    {"Canon EOS R7", "Sony a6700"},
+    {"Nikon Z8", "Sony a9 III"},
+    {"Canon EOS R1", "Nikon Z9"}
+};
+
+void showHeading(const std::string& title) {
+    std::cout << "\n============================================================\n"
+              << "  " << title << '\n'
+              << "============================================================\n\n";
 }
 
-std::vector<CameraCategory> createCameraCategories() {
-    return {
-        {"Compact Digital Camera", 3, 5, 2, 3, 5,
-         {"Canon PowerShot G7 X Mark III", "Sony RX100 VII"}},
-        {"Entry-Level Mirrorless Camera", 4, 4, 3, 4, 4,
-         {"Canon EOS R50", "Nikon Z50II", "Sony a6400"}},
-        {"Enthusiast Mirrorless Camera", 5, 3, 4, 5, 3,
-         {"Canon EOS R7", "Nikon Z6III", "Sony a6700"}},
-        {"High-Speed Mirrorless Camera", 5, 2, 5, 4, 2,
-         {"Canon EOS R5 Mark II", "Nikon Z8", "Sony a9 III"}},
-        {"Professional Full-Frame Mirrorless Camera", 5, 2, 5, 5, 1,
-         {"Canon EOS R1", "Nikon Z9", "Sony a1 II"}}
-    };
-}
-
-int getPurposeBonus(int purpose, std::size_t categoryIndex) {
-    // Columns follow createCameraCategories(); rows follow the purpose menu.
-    static const int bonuses[5][5] = {
-        {15, 10, 3, 0, 0},
-        {12, 15, 8, 2, 1},
-        {2, 8, 15, 5, 10},
-        {0, 3, 8, 18, 12},
-        {0, 2, 10, 12, 20}
-    };
-    return bonuses[purpose - 1][categoryIndex];
-}
-
-int getExperienceBonus(int experience, std::size_t categoryIndex) {
-    // The same category order is used for beginner, intermediate and advanced.
-    static const int bonuses[3][5] = {
-        {8, 12, 3, 0, 0},
-        {2, 5, 12, 6, 3},
-        {0, 2, 7, 10, 12}
-    };
-    return bonuses[experience - 1][categoryIndex];
-}
-
-int calculateScore(const UserPreferences& preferences,
-                   const CameraCategory& category,
-                   std::size_t categoryIndex) {
-    // A larger budget sensitivity rewards affordability, not a higher price.
-    const int preferenceScore =
-        preferences.imageQualityPriority * category.imageQuality
-        + preferences.portabilityPriority * category.portability
-        + preferences.autofocusSpeedPriority * category.autofocusSpeed
-        + preferences.videoPriority * category.videoCapability
-        + preferences.budgetSensitivity * category.affordability;
-    return preferenceScore
-        + getPurposeBonus(preferences.photographyPurpose, categoryIndex)
-        + getExperienceBonus(preferences.experienceLevel, categoryIndex);
-}
-
-void calculateCategoryScores(std::vector<CameraCategory>& categories,
-                             const UserPreferences& preferences) {
-    for (std::size_t index = 0; index < categories.size(); ++index) {
-        categories[index].score = calculateScore(preferences, categories[index], index);
-    }
-}
-
-std::vector<CameraCategory> rankRecommendations(std::vector<CameraCategory> categories) {
-    // Equal scores keep their original category order for reproducible results.
-    std::stable_sort(categories.begin(), categories.end(),
-              [](const CameraCategory& left, const CameraCategory& right) {
-                  return left.score > right.score;
-              });
-    return categories;
-}
-
-std::string getPhotographyPurposeName(int purpose) {
-    static const std::string names[] = {
-        "Family / Casual Photography", "Travel Photography",
-        "Portrait Photography", "Sports / Wildlife Photography",
-        "Professional / Commercial Photography"
-    };
-    return names[purpose - 1];
-}
-
-void displayHeading(const std::string& title) {
-    std::cout << '\n' << std::string(72, '=') << '\n'
-              << "  " << title << '\n' << std::string(72, '=') << "\n\n";
-}
-
-std::string getMainPriorityName(int priority) {
-    static const std::string names[] = {
-        "Image quality", "Portability", "Autofocus / speed", "Video capability"
-    };
-    return names[priority - 1];
-}
-
-void displayUserSummary(const UserPreferences& preferences) {
-    static const std::string experienceNames[] = {
-        "Beginner", "Intermediate", "Advanced"
-    };
-    std::cout << "  YOUR PREFERENCES\n"
-              << "  " << std::left << std::setw(22) << "Purpose:"
-              << getPhotographyPurposeName(preferences.photographyPurpose) << '\n'
-              << "  " << std::setw(22) << "Experience:"
-              << experienceNames[preferences.experienceLevel - 1] << '\n'
-              << "  " << std::setw(22) << "Main priority:"
-              << getMainPriorityName(preferences.mainPriority)
-              << '\n'
-              << "  " << std::setw(22) << "Budget sensitivity:"
-              << preferences.budgetSensitivity << "/5\n";
-}
-
-void displayExplanation(const UserPreferences& preferences,
-                        const CameraCategory& recommendation) {
-    std::cout << "\n  WHY THIS MATCHES YOUR INPUTS\n\n";
-    switch (preferences.photographyPurpose) {
-        case 1:
-            std::cout << "  Family / casual use favours convenient, affordable options.\n";
-            break;
-        case 2:
-            std::cout << "  Travel favours portable cameras with versatile capabilities.\n";
-            break;
-        case 3:
-            std::cout << "  Portrait work favours image quality and creative control.\n";
-            break;
-        case 4:
-            std::cout << "  Sports / wildlife favours fast autofocus and action capture.\n";
-            break;
-        case 5:
-            std::cout << "  Commercial work favours capable cameras for demanding use.\n";
-            break;
-    }
-    switch (preferences.experienceLevel) {
-        case 1:
-            std::cout << "  Beginner bonuses favour accessible compact and entry models.\n";
-            break;
-        case 2:
-            std::cout << "  Intermediate bonuses favour more creative control.\n";
-            break;
-        case 3:
-            std::cout << "  Advanced bonuses favour speed and professional capability.\n";
-            break;
-    }
-
-    const std::string factorNames[] = {
-        "Image quality", "Portability", "Autofocus / speed",
-        "Video capability", "Affordability"
-    };
-    const int priorities[] = {
-        preferences.imageQualityPriority, preferences.portabilityPriority,
-        preferences.autofocusSpeedPriority, preferences.videoPriority,
-        preferences.budgetSensitivity
-    };
-    const int capabilities[] = {
-        recommendation.imageQuality, recommendation.portability,
-        recommendation.autofocusSpeed, recommendation.videoCapability,
-        recommendation.affordability
-    };
-    std::cout << "\n  How the selected profile fits your priorities:\n"
-              << "  (Profile ratings are simplified comparisons, not test scores.)\n\n";
-    for (int index = 0; index < 5; ++index) {
-        if (index == preferences.mainPriority - 1 || index == 4) {
-            std::cout << "  - " << std::left << std::setw(20) << factorNames[index]
-                      << "Profile: " << capabilities[index] << "/5\n";
-            if (priorities[index] >= 4 && capabilities[index] <= 2) {
-                std::cout << "    Trade-off: this is a weaker part of the selected profile.\n";
-            }
-        }
-    }
-    if (preferences.budgetSensitivity >= 4) {
-        std::cout << "\n  Your budget answer gives affordability a strong influence.\n";
-    } else if (preferences.budgetSensitivity <= 2) {
-        std::cout << "\n  Your budget answer gives affordability a smaller influence.\n";
-    } else {
-        std::cout << "\n  Your budget answer gives affordability a moderate influence.\n";
-    }
-    std::cout << "  Together, your four answers give this category a top score.\n";
-}
-
-void displayRecommendation(const std::vector<CameraCategory>& rankedCategories,
-                           const UserPreferences& preferences) {
-    if (rankedCategories.empty()) return;
-    const CameraCategory& best = rankedCategories.front();
-    displayHeading("YOUR CAMERA RECOMMENDATION");
-    displayUserSummary(preferences);
-
-    std::cout << '\n' << std::string(72, '-') << "\n\n"
-              << "  BEST MATCH\n\n"
-              << "  " << best.name << '\n'
-              << "  Suitability score: " << best.score << " points\n"
-              << "  Compare scores within this result; they are not percentages.\n";
-    if (rankedCategories.size() > 1 && best.score == rankedCategories[1].score) {
-        std::cout << "\n  Joint top score: another category is equally suitable by score.\n"
-                  << "  Compare the tied alternatives below before choosing.\n";
-    }
-    displayExplanation(preferences, best);
-
-    std::cout << "\n  EXAMPLE MODELS IN THIS CATEGORY\n\n";
-    for (const std::string& model : best.exampleModels) {
-        std::cout << "  - " << model << '\n';
-    }
-    std::cout << "\n  Examples only. Models can span categories; features and cost vary.\n";
-
-    for (std::size_t index = 1; index < rankedCategories.size(); ++index) {
-        if (index == 1) std::cout << "\n  ALTERNATIVE OPTIONS\n\n";
-        if (index == 3) std::cout << "  OTHER CATEGORIES\n\n";
-        std::cout << "  " << index + 1 << ". " << rankedCategories[index].name
-                  << "\n     Suitability score: " << rankedCategories[index].score
-                  << " points\n\n";
-    }
-    std::cout << "  Equal scores share suitability; their display order is fixed.\n";
-}
-
-int getValidatedInteger(const std::string& prompt, int minValue, int maxValue) {
-    std::string inputLine;
+// Read one complete line so a bad answer does not affect the next question.
+int readChoice(const std::string& prompt, int minimum, int maximum) {
+    std::string line;
     while (true) {
         std::cout << "  " << prompt << "\n  > " << std::flush;
-        if (!std::getline(std::cin, inputLine)) {
+        if (!std::getline(std::cin, line)) {
             std::cout << "\n\n  Input closed. Goodbye!\n";
             return 0;
         }
-        // Separate prompts even when input is redirected and not echoed.
         std::cout << '\n';
-        std::istringstream inputStream(inputLine);
-        int inputValue = 0;
-        char extraCharacter = '\0';
-        if ((inputStream >> inputValue) && !(inputStream >> extraCharacter)
-            && inputValue >= minValue && inputValue <= maxValue) {
-            return inputValue;
+
+        std::istringstream answer(line);
+        int choice = 0;
+        char extra = '\0';
+        if ((answer >> choice) && !(answer >> extra)
+            && choice >= minimum && choice <= maximum) {
+            return choice;
         }
         std::cout << "  Invalid input. Enter a whole number from "
-                  << minValue << " to " << maxValue << ".\n\n";
+                  << minimum << " to " << maximum << ".\n\n";
     }
 }
 
-void displayWelcome() {
-    displayHeading("DIGITAL CAMERA RECOMMENDATION ASSISTANT");
-    std::cout << "  Find a camera category for your purpose and personal priorities.\n\n"
-              << "  Digital photography expanded into consumer and professional use.\n"
-              << "  This assistant connects that development to choosing a camera.\n";
+void showWelcome() {
+    showHeading("DIGITAL CAMERA RECOMMENDATION ASSISTANT");
+    std::cout << "  Find a camera category for your photography needs.\n"
+              << "  Answer four short questions to get a recommendation.\n";
 }
 
-int getPhotographyPurpose() {
-    displayHeading("QUESTION 1 OF 4 - PHOTOGRAPHY PURPOSE");
-    std::cout << "  Select your main photography purpose:\n\n"
-              << "  1. Family / Casual Photography\n"
+int askPurpose() {
+    showHeading("QUESTION 1 OF 4 - PHOTOGRAPHY PURPOSE");
+    std::cout << "  1. Family / Casual Photography\n"
               << "  2. Travel Photography\n"
               << "  3. Portrait Photography\n"
               << "  4. Sports / Wildlife Photography\n"
               << "  5. Professional / Commercial Photography\n\n";
-    return getValidatedInteger("Purpose [1-5]: ", 1, 5);
+    return readChoice("Purpose [1-5]:", 1, 5);
 }
 
-int getExperienceLevel() {
-    displayHeading("QUESTION 2 OF 4 - EXPERIENCE LEVEL");
-    std::cout << "  Select your photography experience:\n\n"
-              << "  1. Beginner\n"
+int askExperience() {
+    showHeading("QUESTION 2 OF 4 - EXPERIENCE LEVEL");
+    std::cout << "  1. Beginner\n"
               << "  2. Intermediate\n"
               << "  3. Advanced\n\n";
-    return getValidatedInteger("Experience [1-3]: ", 1, 3);
+    return readChoice("Experience [1-3]:", 1, 3);
 }
 
-int getRestartChoice() {
-    displayHeading("WHAT WOULD YOU LIKE TO DO?");
-    std::cout << "  1. Start another recommendation\n"
-              << "  2. Exit\n\n";
-    return getValidatedInteger("Choice [1-2]: ", 1, 2);
-}
-
-int getMainPriority() {
-    displayHeading("QUESTION 3 OF 4 - MAIN PRIORITY");
-    std::cout << "  Which feature matters most to you?\n"
-              << "  Your choice gets extra weight; the other features still count.\n\n"
+int askMainPriority() {
+    showHeading("QUESTION 3 OF 4 - MAIN PRIORITY");
+    std::cout << "  Which feature matters most to you?\n\n"
               << "  1. Image quality\n"
               << "  2. Portability\n"
               << "  3. Autofocus / speed\n"
               << "  4. Video capability\n\n";
-    return getValidatedInteger("Main priority [1-4]:", 1, 4);
+    return readChoice("Main priority [1-4]:", 1, 4);
 }
 
-int getBudgetSensitivity() {
-    displayHeading("QUESTION 4 OF 4 - BUDGET SENSITIVITY");
+int askBudget() {
+    showHeading("QUESTION 4 OF 4 - BUDGET SENSITIVITY");
     std::cout << "  How important is keeping the cost low?\n\n"
-              << "  1. Not important - price is not a major concern\n"
+              << "  1. Not important\n"
               << "  2. Slightly important\n"
               << "  3. Moderately important\n"
               << "  4. Important\n"
-              << "  5. Very important - keeping cost low matters most\n\n";
-    return getValidatedInteger("Budget sensitivity [1-5]:", 1, 5);
+              << "  5. Very important\n\n";
+    return readChoice("Budget sensitivity [1-5]:", 1, 5);
+}
+
+// Score one category using the four answers.
+int calculateScore(int category, int purpose, int experience,
+                   int mainPriority, int budget) {
+    int score = 0;
+    for (int feature = 0; feature < 4; ++feature) {
+        int weight = 1;
+        if (feature == mainPriority - 1) {
+            weight = 5;
+        }
+        score += weight * CAMERA_RATINGS[category][feature];
+    }
+
+    // A budget answer of 5 rewards more affordable categories most.
+    score += budget * CAMERA_RATINGS[category][4];
+    score += PURPOSE_BONUSES[purpose - 1][category];
+    score += EXPERIENCE_BONUSES[experience - 1][category];
+    return score;
+}
+
+void calculateAllScores(int purpose, int experience, int mainPriority,
+                        int budget, int scores[CATEGORY_COUNT]) {
+    for (int category = 0; category < CATEGORY_COUNT; ++category) {
+        scores[category] = calculateScore(category, purpose, experience,
+                                          mainPriority, budget);
+    }
+}
+
+// Pick the highest score that has not already been displayed.
+int findNextBest(const int scores[CATEGORY_COUNT],
+                 const bool alreadyShown[CATEGORY_COUNT]) {
+    int best = -1;
+    for (int category = 0; category < CATEGORY_COUNT; ++category) {
+        if (!alreadyShown[category]
+            && (best == -1 || scores[category] > scores[best])) {
+            best = category;
+        }
+    }
+    return best;
+}
+
+void explainResult(int purpose, int experience, int mainPriority,
+                   int budget, int best) {
+    std::cout << "\n  WHY IT MATCHES\n";
+    if (purpose == 1) {
+        std::cout << "  Family photos benefit from easy, convenient cameras.\n";
+    } else if (purpose == 2) {
+        std::cout << "  Travel benefits from a portable, versatile camera.\n";
+    } else if (purpose == 3) {
+        std::cout << "  Portraits benefit from strong image quality and control.\n";
+    } else if (purpose == 4) {
+        std::cout << "  Sports and wildlife benefit from fast autofocus.\n";
+    } else {
+        std::cout << "  Professional work benefits from advanced capability.\n";
+    }
+
+    if (experience == 1) {
+        std::cout << "  Your beginner experience favours approachable options.\n";
+    } else if (experience == 2) {
+        std::cout << "  Your experience favours more creative control.\n";
+    } else {
+        std::cout << "  Your advanced experience favours capable options.\n";
+    }
+
+    const std::string features[4] = {
+        "image quality", "portability", "autofocus / speed", "video"
+    };
+    std::cout << "  You chose " << features[mainPriority - 1]
+              << " as your main priority.\n";
+    if (CAMERA_RATINGS[best][mainPriority - 1] <= 2) {
+        std::cout << "  This is a trade-off for the suggested category.\n";
+    }
+    if (budget >= 4 && CAMERA_RATINGS[best][4] <= 2) {
+        std::cout << "  Cost is another trade-off to consider.\n";
+    }
+}
+
+void showResult(int purpose, int experience, int mainPriority, int budget) {
+    int scores[CATEGORY_COUNT];
+    calculateAllScores(purpose, experience, mainPriority, budget, scores);
+
+    bool alreadyShown[CATEGORY_COUNT] = {false};
+    int topThree[3];
+    for (int place = 0; place < 3; ++place) {
+        topThree[place] = findNextBest(scores, alreadyShown);
+        alreadyShown[topThree[place]] = true;
+    }
+
+    showHeading("YOUR CAMERA RECOMMENDATION");
+    std::cout << "  BEST MATCH\n"
+              << "  " << CAMERA_NAMES[topThree[0]] << '\n'
+              << "  Suitability score: " << scores[topThree[0]] << " points\n";
+    if (scores[topThree[0]] == scores[topThree[1]]) {
+        std::cout << "  The first two categories share the top score.\n";
+    }
+
+    explainResult(purpose, experience, mainPriority, budget, topThree[0]);
+
+    std::cout << "\n  EXAMPLE MODELS\n"
+              << "  - " << EXAMPLE_MODELS[topThree[0]][0] << '\n'
+              << "  - " << EXAMPLE_MODELS[topThree[0]][1] << '\n'
+              << "  These are examples, not specific product recommendations.\n";
+
+    std::cout << "\n  OTHER GOOD MATCHES\n";
+    for (int place = 1; place < 3; ++place) {
+        std::cout << "  " << place + 1 << ". " << CAMERA_NAMES[topThree[place]]
+                  << " (" << scores[topThree[place]] << " points)\n";
+    }
+    std::cout << "\n  Scores compare categories in this program, not percentages.\n";
+}
+
+int askRestart() {
+    showHeading("WHAT WOULD YOU LIKE TO DO?");
+    std::cout << "  1. Start another recommendation\n"
+              << "  2. Exit\n\n";
+    return readChoice("Choice [1-2]:", 1, 2);
 }
 
 int main() {
-    displayWelcome();
-    std::vector<CameraCategory> cameraCategories = createCameraCategories();
+    showWelcome();
     while (true) {
-        UserPreferences preferences;
-        preferences.photographyPurpose = getPhotographyPurpose();
-        if (preferences.photographyPurpose == 0) return 0;
-        preferences.experienceLevel = getExperienceLevel();
-        if (preferences.experienceLevel == 0) return 0;
-        const int mainPriority = getMainPriority();
+        int purpose = askPurpose();
+        if (purpose == 0) return 0;
+
+        int experience = askExperience();
+        if (experience == 0) return 0;
+
+        int mainPriority = askMainPriority();
         if (mainPriority == 0) return 0;
-        applyMainPriority(preferences, mainPriority);
-        preferences.budgetSensitivity = getBudgetSensitivity();
-        if (preferences.budgetSensitivity == 0) return 0;
 
-        calculateCategoryScores(cameraCategories, preferences);
-        const std::vector<CameraCategory> rankedCategories =
-            rankRecommendations(cameraCategories);
-        displayRecommendation(rankedCategories, preferences);
+        int budget = askBudget();
+        if (budget == 0) return 0;
 
-        const int restartChoice = getRestartChoice();
-        if (restartChoice == 0) return 0;
-        if (restartChoice == 2) {
-            std::cout << "\n  Thanks for using the Camera Recommendation Assistant. Goodbye!\n\n";
+        showResult(purpose, experience, mainPriority, budget);
+
+        int restart = askRestart();
+        if (restart != 1) {
+            if (restart == 2) {
+                std::cout << "\n  Thank you. Goodbye!\n";
+            }
             return 0;
         }
-        cameraCategories = createCameraCategories();
     }
 }
